@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "type": "link",
+  "provider_name": "Sealed Sky",
+  "provider_url": "https://sealed-sky.example.com",
+  "title": "Sealed Sky — Cosmic Timelock Encryption",
+  "author_name": "Stardust Cartel",
+  "author_url": "https://sealed-sky.example.com",
+  "thumbnail_url": "https://sealed-sky.example.com/og-image.png",
+  "thumbnail_width": 1200,
+  "thumbnail_height": 630,
+  "cache_age": 86400
+}

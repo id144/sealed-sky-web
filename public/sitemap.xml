@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- TODO before publishing: replace the placeholder origin with your real
+       deployed URL (https://your-domain.example/) and update <lastmod>. -->
+  <url>
+    <loc>https://sealed-sky.example.com/</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

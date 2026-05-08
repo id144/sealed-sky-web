@@ -16,6 +16,51 @@ npm run dev      # http://localhost:5173
 npm run build    # static dist/ ready for Vercel/Netlify/GH Pages
 ```
 
+## Publishing & sharing
+
+The site is fully static — `npm run build` emits `dist/` and that's it. Drop it on any static host (Vercel, Netlify, Cloudflare Pages, GitHub Pages). All crypto runs client-side, no backend.
+
+Before deploying, swap the placeholder origin `https://sealed-sky.example.com` for your real deployed URL in:
+
+- [`index.html`](index.html) — `og:url`, `og:image`, `twitter:image`, oEmbed `<link>`, `<link rel="canonical">`, JSON-LD.
+- [`public/oembed.json`](public/oembed.json) — `provider_url`, `author_url`, `thumbnail_url`.
+- [`public/robots.txt`](public/robots.txt) — `Sitemap:` line.
+- [`public/sitemap.xml`](public/sitemap.xml) — `<loc>`, `<lastmod>`.
+- [`package.json`](package.json) — `homepage`.
+
+A quick way to do it all at once on Linux/macOS:
+
+```bash
+ORIGIN="https://your-deployment.example.com"
+grep -rl "sealed-sky.example.com" . --include="*.html" --include="*.json" --include="*.md" --include="*.txt" --include="*.xml" \
+  | xargs sed -i.bak "s|https://sealed-sky.example.com|${ORIGIN}|g"
+find . -name "*.bak" -delete
+```
+
+### Social-card image (PNG for Twitter/X)
+
+`og-image.svg` ships with the project and works on Slack, Discord, Telegram, LinkedIn, and Facebook out of the box. Twitter/X does **not** render SVG OG images — generate a PNG copy and update the meta tags:
+
+```bash
+# ImageMagick
+magick public/og-image.svg -resize 1200x630 public/og-image.png
+
+# or rsvg-convert (cleaner type rendering)
+rsvg-convert -w 1200 -h 630 public/og-image.svg -o public/og-image.png
+```
+
+Then change three lines in `index.html` (`og:image`, `og:image:type` → `image/png`, `twitter:image`) and `thumbnail_url` in `oembed.json` to point at `og-image.png`.
+
+### What's included for sharing
+
+- **Open Graph** — title, description, 1200×630 cover image, site name, locale, image alt.
+- **Twitter / X Card** — `summary_large_image` style with full description and image.
+- **oEmbed discovery** — `<link rel="alternate" type="application/json+oembed">` pointing at `/oembed.json`. Discord and a few other clients honor it.
+- **Schema.org JSON-LD** — `WebApplication` markup with `isPartOf` linking the ETH Prague 2026 hackathon. Helps search engines.
+- **Favicon** — gold star-with-trail SVG matching the app's brand mark.
+- **Theme color** — `#0a0910` so mobile browser chrome blends into the deep-space backdrop.
+- **robots.txt + sitemap.xml** — minimal but valid; signals the site is open to crawlers.
+
 ## What it does
 
 1. **Compose** — type a message, pick a future unlock time. Default: now + 5 min.

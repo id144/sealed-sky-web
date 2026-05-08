@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="trail" gradientUnits="userSpaceOnUse" x1="16" y1="44" x2="46" y2="22">
+      <stop offset="0" stop-color="#fdd400" stop-opacity="0"/>
+      <stop offset="1" stop-color="#fdd400" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" fill="#0a0910"/>
+  <path d="M 16 44 A 30 30 0 0 1 46 22" stroke="url(#trail)" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <circle cx="46" cy="22" r="4" fill="#fdd400"/>
+  <!-- Top-left + bottom-right gold corner bracket, mirroring the app's panel motif -->
+  <path d="M 4 4 L 4 12 M 4 4 L 12 4" stroke="#fdd400" stroke-width="1.5" fill="none"/>
+  <path d="M 60 60 L 60 52 M 60 60 L 52 60" stroke="#fdd400" stroke-width="1.5" fill="none"/>
+</svg>

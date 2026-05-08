@@ -3,8 +3,108 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sealed Sky — Cosmic Timelock</title>
+
+    <!--
+      ─── Publishing checklist ───────────────────────────────────────────────
+      Before deploying, replace every occurrence of `https://sealed-sky.example.com`
+      below (and in /public/oembed.json, /public/robots.txt, /public/sitemap.xml)
+      with the real deployed origin.
+
+      For social-card compatibility on Twitter/X (which doesn't render SVG),
+      generate a PNG copy of /public/og-image.svg (e.g. via ImageMagick:
+      `magick og-image.svg -resize 1200x630 og-image.png`) and update the
+      og:image / twitter:image URLs to point at it.
+      ────────────────────────────────────────────────────────────────────────
+    -->
+
+    <link rel="canonical" href="https://sealed-sky.example.com/" />
+
+    <title>Sealed Sky — Cosmic Timelock Encryption</title>
+    <meta
+      name="description"
+      content="Encrypt a message now, decrypt only when the future arrives. drand timelock + SpaceComputer cTRNG commit-reveal, all in the browser. Built for ETH Prague 2026."
+    />
+    <meta
+      name="keywords"
+      content="timelock, encryption, drand, SpaceComputer, cTRNG, IBE, BLS12-381, commit-reveal, cosmic randomness, ETH Prague 2026, hackathon, Stardust Cartel"
+    />
+    <meta name="author" content="Stardust Cartel" />
+    <meta name="theme-color" content="#0a0910" />
+    <meta name="color-scheme" content="dark" />
+
+    <!-- ─── Open Graph (Facebook, LinkedIn, Slack, Discord, Telegram, …) ─── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sealed Sky" />
+    <meta property="og:title" content="Sealed Sky — Cosmic Timelock Encryption" />
+    <meta
+      property="og:description"
+      content="Encrypt a message now, decrypt only when the future arrives. drand timelock + SpaceComputer cTRNG, all in the browser."
+    />
+    <meta property="og:url" content="https://sealed-sky.example.com/" />
+    <meta property="og:image" content="https://sealed-sky.example.com/og-image.svg" />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Sealed Sky — cosmic timelock encryption. Built for ETH Prague 2026."
+    />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- ─── Twitter / X Card ─── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sealed Sky — Cosmic Timelock Encryption" />
+    <meta
+      name="twitter:description"
+      content="Encrypt now, decrypt only when the future arrives. drand timelock + SpaceComputer cTRNG. Built for ETH Prague 2026."
+    />
+    <meta name="twitter:image" content="https://sealed-sky.example.com/og-image.svg" />
+    <meta
+      name="twitter:image:alt"
+      content="Sealed Sky — cosmic timelock encryption. Built for ETH Prague 2026."
+    />
+
+    <!-- ─── oEmbed discovery (Discord, some embed services) ─── -->
+    <link
+      rel="alternate"
+      type="application/json+oembed"
+      href="https://sealed-sky.example.com/oembed.json"
+      title="Sealed Sky"
+    />
+
+    <!-- ─── Icons ─── -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/og-image.svg" />
+    <link rel="mask-icon" href="/favicon.svg" color="#fdd400" />
+
+    <!-- ─── Structured data (Schema.org) ─── -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Sealed Sky",
+        "description": "Browser-based timelock encryption demo using drand quicknet IBE and SpaceComputer cTRNG commit-reveal. Encrypt now, decrypt only when the future arrives.",
+        "url": "https://sealed-sky.example.com/",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and Web Crypto",
+        "creator": {
+          "@type": "Organization",
+          "name": "Stardust Cartel"
+        },
+        "isPartOf": {
+          "@type": "Event",
+          "name": "ETH Prague 2026 Hackathon",
+          "startDate": "2026-05",
+          "url": "https://ethprague.com/hackathon"
+        },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+
+    <!-- ─── Performance preconnects ─── -->
     <link rel="preconnect" href="https://api.drand.sh" />
+    <link rel="preconnect" href="https://ipfs.io" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

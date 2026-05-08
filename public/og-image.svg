@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="purple-glow" cx="0.18" cy="0.22" r="0.55">
+      <stop offset="0%" stop-color="#572e72" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#0a0910" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gold-glow" cx="0.92" cy="0.95" r="0.5">
+      <stop offset="0%" stop-color="#fdd400" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#0a0910" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Several star-trail gradients for the decorative arcs in the upper-right. -->
+    <linearGradient id="t1" gradientUnits="userSpaceOnUse" x1="800" y1="180" x2="950" y2="120">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.85"/>
+    </linearGradient>
+    <linearGradient id="t2" gradientUnits="userSpaceOnUse" x1="950" y1="240" x2="1080" y2="200">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="t3" gradientUnits="userSpaceOnUse" x1="880" y1="80" x2="1010" y2="60">
+      <stop offset="0" stop-color="#fdd400" stop-opacity="0"/>
+      <stop offset="1" stop-color="#fdd400" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="t4" gradientUnits="userSpaceOnUse" x1="1010" y1="350" x2="1110" y2="320">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="t5" gradientUnits="userSpaceOnUse" x1="780" y1="320" x2="900" y2="290">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Backdrop -->
+  <rect width="1200" height="630" fill="#0a0910"/>
+  <rect width="1200" height="630" fill="url(#purple-glow)"/>
+  <rect width="1200" height="630" fill="url(#gold-glow)"/>
+
+  <!-- Decorative star trails, all centred on a virtual rotation point off the
+       upper-right edge so the arcs curl convincingly around it. -->
+  <g>
+    <path d="M 800 180 A 380 380 0 0 1 950 120" stroke="url(#t1)" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+    <circle cx="950" cy="120" r="2.2" fill="#ffffff"/>
+
+    <path d="M 950 240 A 330 330 0 0 1 1080 200" stroke="url(#t2)" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+    <circle cx="1080" cy="200" r="2" fill="#ffffff"/>
+
+    <path d="M 880 80 A 480 480 0 0 1 1010 60" stroke="url(#t3)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    <circle cx="1010" cy="60" r="2.6" fill="#fdd400"/>
+
+    <path d="M 1010 350 A 280 280 0 0 1 1110 320" stroke="url(#t4)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    <circle cx="1110" cy="320" r="1.8" fill="#ffffff"/>
+
+    <path d="M 780 320 A 360 360 0 0 1 900 290" stroke="url(#t5)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    <circle cx="900" cy="290" r="1.6" fill="#ffffff"/>
+
+    <!-- A few static pinprick stars for ambient density -->
+    <circle cx="820" cy="60" r="1.2" fill="#ffffff" opacity="0.7"/>
+    <circle cx="1140" cy="100" r="1" fill="#ffffff" opacity="0.55"/>
+    <circle cx="970" cy="400" r="1.2" fill="#ffffff" opacity="0.5"/>
+    <circle cx="1080" cy="450" r="1" fill="#fdd400" opacity="0.55"/>
+    <circle cx="870" cy="450" r="1" fill="#ffffff" opacity="0.4"/>
+  </g>
+
+  <!-- Gold corner brackets, matching the app's panel motif -->
+  <path d="M 60 60 L 60 84 M 60 60 L 84 60" stroke="#fdd400" stroke-width="1.5" fill="none"/>
+  <path d="M 1140 570 L 1140 546 M 1140 570 L 1116 570" stroke="#fdd400" stroke-width="1.5" fill="none"/>
+
+  <!-- Hero -->
+  <text x="80" y="290"
+        font-family="Mozilla Text, Georgia, 'Times New Roman', serif"
+        font-size="124" font-weight="300"
+        fill="#efefef" letter-spacing="-3">Sealed Sky</text>
+
+  <text x="82" y="338"
+        font-family="IBM Plex Mono, ui-monospace, monospace"
+        font-size="20" font-weight="500"
+        fill="#fdd400" letter-spacing="6">COSMIC TIMELOCK ENCRYPTION</text>
+
+  <line x1="82" y1="378" x2="156" y2="378" stroke="#fdd400" stroke-width="2"/>
+
+  <text x="82" y="430"
+        font-family="ABeeZee, ui-sans-serif, system-ui, sans-serif"
+        font-size="28" fill="#d3cdb6">Encrypt now. Decrypt only when the future arrives.</text>
+
+  <text x="82" y="510"
+        font-family="IBM Plex Mono, ui-monospace, monospace"
+        font-size="14" font-weight="500"
+        fill="#7b744c" letter-spacing="3">DRAND TIMELOCK   ·   SPACECOMPUTER cTRNG</text>
+
+  <text x="82" y="540"
+        font-family="IBM Plex Mono, ui-monospace, monospace"
+        font-size="14" font-weight="500"
+        fill="#7b744c" letter-spacing="3">BUILT FOR ETH PRAGUE 2026 HACKATHON   ·   STARDUST CARTEL</text>
+</svg>

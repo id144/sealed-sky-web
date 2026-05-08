@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# TODO before publishing: replace with your real deployed origin.
+Sitemap: https://sealed-sky.example.com/sitemap.xml
