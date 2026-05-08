@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Compose } from "./components/Compose";
 import { Queue } from "./components/Queue";
 import { Detail } from "./components/Detail";
+import { Starfield } from "./components/Starfield";
 import {
   getChainInfo,
   roundAtTime,
@@ -268,8 +269,10 @@ export default function App() {
   );
 
   return (
-    <div className="app">
-      <header>
+    <>
+      <Starfield />
+      <div className="app">
+        <header>
         <h1>
           Sealed Sky <span className="subtitle">cosmic timelock encryption</span>
         </h1>
@@ -305,6 +308,7 @@ export default function App() {
           Two backends, one queue · drand timelock for non-interactive IBE · SpaceComputer cTRNG for commit-reveal with an orbital witness
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
