@@ -15,6 +15,8 @@ export interface CtrngEnvelopePayload {
   ct: string;
   iv: string;
   commit: string;
+  sender_ens?: string;
+  recipient_ens?: string;
 }
 
 function bytesToB64Json(bytes: Uint8Array): string {
@@ -27,6 +29,8 @@ export function packCtrng(args: {
   ct: Uint8Array;
   iv: Uint8Array;
   commit: string;
+  senderEns?: string | null;
+  recipientEns?: string | null;
 }): string {
   const payload: CtrngEnvelopePayload = {
     v: CTRNG_ENVELOPE_VERSION,
@@ -39,6 +43,8 @@ export function packCtrng(args: {
     iv: bytesToB64Json(args.iv),
     commit: args.commit,
   };
+  if (args.senderEns) payload.sender_ens = args.senderEns;
+  if (args.recipientEns) payload.recipient_ens = args.recipientEns;
   const utf8 = new TextEncoder().encode(JSON.stringify(payload));
   return bytesToB64(utf8);
 }

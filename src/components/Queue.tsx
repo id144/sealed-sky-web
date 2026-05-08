@@ -66,6 +66,25 @@ export function Queue({ items, selectedId, now, onSelect, onUnseal, onDelete }: 
                       : `unlocks in ${formatCountdown(remaining)}`}
                 </span>
               </div>
+              {(it.sender_ens || it.recipient_ens) && (
+                <div className="ens-line">
+                  {it.sender_ens && (
+                    <>
+                      <span className="ens-label">from</span>
+                      <span className="ens-name">{it.sender_ens}</span>
+                    </>
+                  )}
+                  {it.sender_ens && it.recipient_ens && (
+                    <span className="ens-arrow">→</span>
+                  )}
+                  {it.recipient_ens && (
+                    <>
+                      <span className="ens-label">to</span>
+                      <span className="ens-name">{it.recipient_ens}</span>
+                    </>
+                  )}
+                </div>
+              )}
               {it.status === "unsealed" && it.plaintext !== undefined ? (
                 <div className="preview">{truncate(it.plaintext)}</div>
               ) : (

@@ -31,13 +31,26 @@ export interface ImportedItem {
 }
 
 export function buildShareUrl(item: QueueItem): string {
+  const base = `${window.location.origin}${window.location.pathname}`;
+
+  // If the capsule has been published to ENS, prefer the short ENS URL.
+  // For cTRNG we still need to embed K as a fragment param so the recipient
+  // can decrypt; the ENS query gives the envelope, the fragment gives the key.
+  if (item.capsule_ens) {
+    const url = `${base}?ens=${encodeURIComponent(item.capsule_ens)}`;
+    if (item.backend === "ctrng" && item.ctrng_key_b64) {
+      return `${url}#k=${b64UrlEncode(item.ctrng_key_b64)}`;
+    }
+    return url;
+  }
+
+  // Fall back to the fragment-only reopen link.
   const params = new URLSearchParams();
   params.set("env", b64UrlEncode(item.envelope));
   params.set("t", String(item.created_at));
   if (item.backend === "ctrng" && item.ctrng_key_b64) {
     params.set("k", b64UrlEncode(item.ctrng_key_b64));
   }
-  const base = `${window.location.origin}${window.location.pathname}`;
   return `${base}#${params.toString()}`;
 }
 
@@ -53,6 +66,15 @@ export function parseFragment(): ImportedItem | null {
   const kUrl = params.get("k");
   const ctrngKeyB64 = kUrl ? b64UrlDecode(kUrl) : undefined;
   return { envelope, createdAt, ctrngKeyB64 };
+}
+
+/** Read just the cTRNG key from a fragment that has no envelope (used with ?ens=). */
+export function readKeyFragment(): string | undefined {
+  const raw = window.location.hash.replace(/^#/, "");
+  if (!raw) return undefined;
+  const params = new URLSearchParams(raw);
+  const kUrl = params.get("k");
+  return kUrl ? b64UrlDecode(kUrl) : undefined;
 }
 
 export function clearFragment(): void {

@@ -16,6 +16,55 @@ npm run dev      # http://localhost:5173
 npm run build    # static dist/ ready for Vercel/Netlify/GH Pages
 ```
 
+## ENS integration
+
+Sealed Sky has two layers of ENS support — a read-only addressing layer that ships out-of-the-box and an optional subdomain-publishing layer that needs a NameStone account.
+
+### Phase 1 — read-only ENS metadata (zero config)
+
+- **Connect wallet** button in the header (any EIP-1193 provider — MetaMask, Rabby, Coinbase Wallet, etc.).
+- The connected address is reverse-resolved to its primary ENS name, displayed as *"sealed by alice.eth"*. Each new envelope you create carries `sender_ens` as metadata.
+- The Compose panel has an optional **"To (ENS)"** field. Type `vitalik.eth` and we forward-resolve it via viem's universal resolver in the background, showing the address as confirmation. The envelope carries `recipient_ens`.
+- Detail panel renders **From → To** with deep links to `app.ens.domains`.
+- Reopen links pass the ENS metadata through, so a recipient's browser sees the same addressing.
+
+No transactions are signed; no gas is paid. Strictly metadata.
+
+### Phase 2 — ENS subdomains per capsule (NameStone)
+
+Each sealed message gets its own ENS subdomain like `cap-3f2a9c1b.<your-domain>.eth` whose text records carry the envelope, unlock time, backend tag, and ENS metadata. Anyone can resolve the name with any standard ENS-aware tool (the [ENS app](https://app.ens.domains/), `ens-tools`, viem, ethers, etc.).
+
+**Setup:**
+
+1. Sign up at [namestone.com](https://namestone.com), register a parent domain, copy the API key.
+2. Copy `.env.example` → `.env.local` and fill in:
+   ```bash
+   VITE_NAMESTONE_API_KEY=ns_pk_…
+   VITE_NAMESTONE_DOMAIN=your-domain.eth
+   ```
+3. Restart `npm run dev`. The "publish to ENS" path now activates automatically every time you seal a message.
+
+**What gets published:**
+
+| text record | value |
+|---|---|
+| `envelope` | the full envelope blob (drand or cTRNG) |
+| `unlock_unix` | unlock time as decimal Unix seconds |
+| `backend` | `drand` or `ctrng` |
+| `created_at` | seal time as decimal Unix seconds |
+| `sender_ens` | sender's ENS, if connected (optional) |
+| `recipient_ens` | recipient ENS, if entered (optional) |
+
+**What gets shareable:**
+
+When a capsule has been published, the "copy reopen link" button switches to a short ENS-based URL: `https://your-app.com/?ens=cap-3f2a9c1b.your-domain.eth`. For cTRNG mode the URL gains `#k=…` carrying the AES key (still client-side; never sent to a server).
+
+**Honest limitations:**
+
+- The capsule subdomain stores the envelope publicly. For cTRNG, the AES key K is *not* in the ENS records — it stays in the originating browser's localStorage or the reopen URL fragment. The ENS records alone are useless to a third party for cTRNG capsules. drand capsules are fully decryptable from the ENS records by anyone, after the unlock signature publishes.
+- NameStone uses CCIP-Read to serve subdomains off-chain. Resolving them requires a CCIP-Read-capable client (viem and ethers handle this transparently).
+- If `VITE_NAMESTONE_*` are absent the app keeps working — sealing still produces envelopes, queue items get a placeholder, just no capsule subdomain. Phase 1 is unaffected.
+
 ## Publishing & sharing
 
 The site is fully static — `npm run build` emits `dist/` and that's it. Drop it on any static host (Vercel, Netlify, Cloudflare Pages, GitHub Pages). All crypto runs client-side, no backend.

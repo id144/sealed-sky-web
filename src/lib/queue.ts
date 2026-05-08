@@ -22,6 +22,14 @@ export interface QueueItem {
   ctrng_witness_timestamp?: number;
   ctrng_witness_value?: string;
   ctrng_witness_url?: string;
+
+  // ENS metadata (Phase 1) — addressing layer, not crypto-binding
+  sender_ens?: string;
+  recipient_ens?: string;
+
+  // ENS subdomain published for this capsule (Phase 2)
+  capsule_ens?: string;
+  capsule_publish_error?: string;
 }
 
 const KEY = "sealed-sky.queue.v1";

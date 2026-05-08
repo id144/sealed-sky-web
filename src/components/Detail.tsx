@@ -5,6 +5,7 @@ import { verifyUrl } from "../lib/drand";
 import { BACKENDS } from "../lib/backend";
 import { CTRNG_GATEWAYS } from "../lib/ctrng";
 import { buildShareUrl } from "../lib/share";
+import { ensAppUrl } from "../lib/ens";
 
 interface Props {
   item: QueueItem | null;
@@ -44,6 +45,48 @@ export function Detail({ item }: Props) {
       <dl>
         <dt>backend</dt>
         <dd>{BACKENDS[item.backend].label}</dd>
+
+        {item.sender_ens && (
+          <>
+            <dt>from</dt>
+            <dd>
+              <a href={ensAppUrl(item.sender_ens)} target="_blank" rel="noreferrer">
+                {item.sender_ens}
+              </a>
+            </dd>
+          </>
+        )}
+
+        {item.recipient_ens && (
+          <>
+            <dt>to</dt>
+            <dd>
+              <a href={ensAppUrl(item.recipient_ens)} target="_blank" rel="noreferrer">
+                {item.recipient_ens}
+              </a>
+            </dd>
+          </>
+        )}
+
+        {item.capsule_ens && (
+          <>
+            <dt>capsule ENS</dt>
+            <dd>
+              <a href={ensAppUrl(item.capsule_ens)} target="_blank" rel="noreferrer">
+                {item.capsule_ens}
+              </a>
+            </dd>
+          </>
+        )}
+
+        {item.capsule_publish_error && !item.capsule_ens && (
+          <>
+            <dt>capsule ENS</dt>
+            <dd>
+              <span className="error inline">publish failed: {item.capsule_publish_error}</span>
+            </dd>
+          </>
+        )}
 
         {item.backend === "drand" && item.round !== undefined && (
           <>

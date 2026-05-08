@@ -677,6 +677,151 @@ button.ghost:hover:not(:disabled) {
   word-break: break-all;
 }
 
+/* ─── Wallet bar ─── */
+.wallet-bar {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.wallet-bar.connected {
+  text-transform: uppercase;
+}
+
+.wallet-bar .wallet-tag {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.wallet-bar .wallet-name {
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.wallet-bar .wallet-addr {
+  color: var(--muted-2);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.wallet-bar .wallet-no-provider {
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+
+.wallet-bar .wallet-no-provider a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent-dim);
+}
+
+.wallet-connect-btn {
+  padding: 6px 14px;
+  font-size: 10px;
+}
+
+.wallet-disconnect {
+  padding: 4px 10px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+/* ─── Recipient ENS row + sender hint ─── */
+.recipient-row {
+  align-items: end;
+}
+
+.recipient-row label {
+  flex: 2;
+}
+
+.recipient-row input[type="text"] {
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text);
+  border: 1px solid var(--hair);
+  border-radius: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+}
+
+.recipient-row input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.recipient-status {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  min-width: 110px;
+  padding-bottom: 11px;
+}
+
+.recipient-status.status-checking {
+  color: var(--muted);
+}
+.recipient-status.status-resolved {
+  color: var(--ok);
+}
+.recipient-status.status-unresolved {
+  color: var(--err);
+}
+
+.sender-hint {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.sender-hint strong {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ─── ENS line on queue rows ─── */
+.ens-line {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.ens-line .ens-label {
+  color: var(--muted-2);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 9px;
+}
+
+.ens-line .ens-name {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.ens-line .ens-arrow {
+  color: var(--muted);
+  margin: 0 2px;
+}
+
 /* ─── Footer ─── */
 footer {
   margin-top: 56px;

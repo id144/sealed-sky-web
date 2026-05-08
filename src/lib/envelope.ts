@@ -11,9 +11,15 @@ export interface EnvelopePayload {
   round: number;
   backend: string;
   ct: string;
+  sender_ens?: string;
+  recipient_ens?: string;
 }
 
-export function pack(round: number, ct: Uint8Array): string {
+export function pack(
+  round: number,
+  ct: Uint8Array,
+  options?: { senderEns?: string | null; recipientEns?: string | null },
+): string {
   const payload: EnvelopePayload = {
     v: ENVELOPE_VERSION,
     chain: CHAIN_NAME,
@@ -22,6 +28,8 @@ export function pack(round: number, ct: Uint8Array): string {
     backend: BACKEND_TAG,
     ct: bytesToB64(ct),
   };
+  if (options?.senderEns) payload.sender_ens = options.senderEns;
+  if (options?.recipientEns) payload.recipient_ens = options.recipientEns;
   const utf8 = new TextEncoder().encode(JSON.stringify(payload));
   return bytesToB64(utf8);
 }

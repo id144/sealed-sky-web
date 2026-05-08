@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Compose } from "./components/Compose";
+import { Compose, type SealOptions } from "./components/Compose";
 import { Queue } from "./components/Queue";
 import { Detail } from "./components/Detail";
 import { Starfield } from "./components/Starfield";
+import { WalletConnect } from "./components/WalletConnect";
 import {
   getChainInfo,
   roundAtTime,
@@ -24,7 +25,18 @@ import {
   type QueueItem,
 } from "./lib/queue";
 import type { Backend } from "./lib/backend";
-import { parseFragment, clearFragment, buildItemFromImport } from "./lib/share";
+import {
+  parseFragment,
+  readKeyFragment,
+  clearFragment,
+  buildItemFromImport,
+} from "./lib/share";
+import {
+  isNameStoneConfigured,
+  generateCapsuleLabel,
+  publishCapsule,
+  fetchCapsuleByEns,
+} from "./lib/namestone";
 
 const POLL_MS = 2500;
 
@@ -34,6 +46,10 @@ export default function App() {
   const [now, setNow] = useState(() => Date.now());
   const [chainReady, setChainReady] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<{ address: string | null; ens: string | null }>({
+    address: null,
+    ens: null,
+  });
   const inFlight = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -46,22 +62,45 @@ export default function App() {
       .catch((e) => setBootError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  // Boot-time import of an envelope from #env=… (a "reopen link"). Runs once.
+  // Boot-time import: either #env=… (reopen link) or ?ens=<name> (ENS-resolved capsule).
   useEffect(() => {
-    const imp = parseFragment();
-    if (!imp) return;
     let cancelled = false;
+    const ensParam = new URLSearchParams(window.location.search).get("ens");
+    const fragmentImp = parseFragment();
+    if (!ensParam && !fragmentImp) return;
+
     (async () => {
       try {
+        let imp = fragmentImp;
+        let capsuleEns: string | undefined;
+        if (ensParam) {
+          capsuleEns = ensParam;
+          const records = await fetchCapsuleByEns(ensParam);
+          if (!records) {
+            throw new Error(`no envelope text record on ${ensParam}`);
+          }
+          imp = {
+            envelope: records.envelope,
+            createdAt: records.createdAt ?? Math.floor(Date.now() / 1000),
+            // For cTRNG, the key isn't in the ENS records (privacy-by-design).
+            // Look for it in the URL fragment (?ens=…#k=…). drand needs no key.
+            ctrngKeyB64: readKeyFragment(),
+          };
+        }
+        if (!imp) return;
+
         const draft = buildItemFromImport(imp, newId);
-        // drand items don't carry unlock_unix in the envelope — derive it from chain info.
         let unlockUnix = draft.unlock_unix;
         if (draft.backend === "drand" && draft.round !== undefined) {
           const info = await getChainInfo();
           unlockUnix = timeAtRound(draft.round, info);
         }
         if (cancelled) return;
-        const finalised: QueueItem = { ...draft, unlock_unix: unlockUnix };
+        const finalised: QueueItem = {
+          ...draft,
+          unlock_unix: unlockUnix,
+          ...(capsuleEns ? { capsule_ens: capsuleEns } : {}),
+        };
         setItems((prev) => {
           const existing = findByEnvelope(prev, finalised.envelope);
           if (existing) {
@@ -75,6 +114,12 @@ export default function App() {
         setBootError(`failed to import shared envelope: ${e instanceof Error ? e.message : String(e)}`);
       } finally {
         clearFragment();
+        // Strip ?ens= from the URL too.
+        if (ensParam) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("ens");
+          history.replaceState(null, "", url.pathname + (url.search || "") + url.hash);
+        }
       }
     })();
     return () => {
@@ -97,62 +142,110 @@ export default function App() {
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }, []);
 
-  const sealDrand = useCallback(async (message: string, unlockUnix: number) => {
-    const info = await getChainInfo();
-    const round = roundAtTime(unlockUnix, info);
-    const actualUnlock = timeAtRound(round, info);
-    const ct = await drandEncrypt(round, message);
-    const envelope = packDrand(round, ct);
-    const item: QueueItem = {
-      id: newId(),
-      backend: "drand",
-      envelope,
-      round,
-      unlock_unix: actualUnlock,
-      created_at: Math.floor(Date.now() / 1000),
-      status: "sealed",
-    };
-    setItems((prev) => [...prev, item]);
-    setSelectedId(item.id);
-  }, []);
+  // Phase-2 ENS subdomain publish. Runs in background after seal — non-blocking.
+  // Silently no-ops if NameStone isn't configured.
+  const publishToNameStone = useCallback(
+    async (item: QueueItem, ownerAddress: string | null) => {
+      if (!isNameStoneConfigured()) return;
+      const label = generateCapsuleLabel();
+      try {
+        const records: Record<string, string> = {
+          envelope: item.envelope,
+          unlock_unix: String(item.unlock_unix),
+          backend: item.backend,
+          created_at: String(item.created_at),
+        };
+        if (item.sender_ens) records.sender_ens = item.sender_ens;
+        if (item.recipient_ens) records.recipient_ens = item.recipient_ens;
+        const fqn = await publishCapsule({
+          label,
+          ownerAddress,
+          textRecords: records,
+        });
+        updateItem(item.id, { capsule_ens: fqn, capsule_publish_error: undefined });
+      } catch (e) {
+        updateItem(item.id, {
+          capsule_publish_error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    },
+    [updateItem],
+  );
 
-  const sealCtrng = useCallback(async (message: string, unlockUnix: number) => {
-    let targetSeq: number | undefined;
-    try {
-      const ref = await fetchLatestBeacon();
-      targetSeq = estimateTargetSequence(unlockUnix, ref);
-    } catch {
-      // Beacon unreachable at seal time is non-fatal — we don't need it to encrypt.
-      targetSeq = undefined;
-    }
-    const sealed = await symSeal(message, unlockUnix);
-    const envelope = packCtrng({
-      unlockUnix,
-      targetSequence: targetSeq,
-      ct: sealed.ct,
-      iv: sealed.iv,
-      commit: sealed.commit,
-    });
-    const item: QueueItem = {
-      id: newId(),
-      backend: "ctrng",
-      envelope,
-      unlock_unix: unlockUnix,
-      created_at: Math.floor(Date.now() / 1000),
-      status: "sealed",
-      ctrng_key_b64: bytesToB64(sealed.key),
-      ctrng_target_sequence: targetSeq,
-    };
-    setItems((prev) => [...prev, item]);
-    setSelectedId(item.id);
-  }, []);
+  const sealDrand = useCallback(
+    async (message: string, unlockUnix: number, opts: SealOptions, senderEns: string | null) => {
+      const info = await getChainInfo();
+      const round = roundAtTime(unlockUnix, info);
+      const actualUnlock = timeAtRound(round, info);
+      const ct = await drandEncrypt(round, message);
+      const envelope = packDrand(round, ct, {
+        senderEns: senderEns ?? null,
+        recipientEns: opts.recipientEns ?? null,
+      });
+      const item: QueueItem = {
+        id: newId(),
+        backend: "drand",
+        envelope,
+        round,
+        unlock_unix: actualUnlock,
+        created_at: Math.floor(Date.now() / 1000),
+        status: "sealed",
+        sender_ens: senderEns ?? undefined,
+        recipient_ens: opts.recipientEns,
+      };
+      setItems((prev) => [...prev, item]);
+      setSelectedId(item.id);
+      // Background ENS publish — fire and forget.
+      void publishToNameStone(item, identity.address);
+    },
+    [publishToNameStone, identity.address],
+  );
+
+  const sealCtrng = useCallback(
+    async (message: string, unlockUnix: number, opts: SealOptions, senderEns: string | null) => {
+      let targetSeq: number | undefined;
+      try {
+        const ref = await fetchLatestBeacon();
+        targetSeq = estimateTargetSequence(unlockUnix, ref);
+      } catch {
+        targetSeq = undefined;
+      }
+      const sealed = await symSeal(message, unlockUnix);
+      const envelope = packCtrng({
+        unlockUnix,
+        targetSequence: targetSeq,
+        ct: sealed.ct,
+        iv: sealed.iv,
+        commit: sealed.commit,
+        senderEns: senderEns ?? null,
+        recipientEns: opts.recipientEns ?? null,
+      });
+      const item: QueueItem = {
+        id: newId(),
+        backend: "ctrng",
+        envelope,
+        unlock_unix: unlockUnix,
+        created_at: Math.floor(Date.now() / 1000),
+        status: "sealed",
+        ctrng_key_b64: bytesToB64(sealed.key),
+        ctrng_target_sequence: targetSeq,
+        sender_ens: senderEns ?? undefined,
+        recipient_ens: opts.recipientEns,
+      };
+      setItems((prev) => [...prev, item]);
+      setSelectedId(item.id);
+      void publishToNameStone(item, identity.address);
+    },
+    [publishToNameStone, identity.address],
+  );
 
   const handleSeal = useCallback(
-    async (message: string, unlockUnix: number, backend: Backend) => {
-      if (backend === "drand") return sealDrand(message, unlockUnix);
-      return sealCtrng(message, unlockUnix);
+    async (message: string, unlockUnix: number, backend: Backend, opts: SealOptions) => {
+      const sender = identity.ens;
+      if (backend === "drand") return sealDrand(message, unlockUnix, opts, sender);
+      return sealCtrng(message, unlockUnix, opts, sender);
     },
-    [sealDrand, sealCtrng],
+    [sealDrand, sealCtrng, identity.ens],
   );
 
   const tryUnsealDrand = useCallback(
@@ -282,11 +375,12 @@ export default function App() {
           <span className="sep"> · </span>
           SpaceComputer cTRNG · <code>k2k4r8…09f</code>
         </div>
+        <WalletConnect onIdentityChange={setIdentity} />
         {bootError && <div className="error">drand unreachable: {bootError}</div>}
       </header>
       <main>
         <div className="left-col">
-          <Compose onSeal={handleSeal} disabled={!chainReady} />
+          <Compose onSeal={handleSeal} disabled={!chainReady} senderEns={identity.ens} />
           <Queue
             items={sortedItems}
             selectedId={selectedId}
