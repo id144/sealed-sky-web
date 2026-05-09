@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/namestone/:path*",
+      "destination": "https://namestone.com/api/public_v1/:path*"
+    }
+  ]
+}

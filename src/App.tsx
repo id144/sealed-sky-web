@@ -36,6 +36,7 @@ import {
   generateCapsuleLabel,
   publishCapsule,
   fetchCapsuleByEns,
+  NAMESTONE_DOMAIN,
 } from "./lib/namestone";
 
 const POLL_MS = 2500;
@@ -65,8 +66,12 @@ export default function App() {
   // Boot-time import: either #env=… (reopen link) or ?ens=<name> (ENS-resolved capsule).
   useEffect(() => {
     let cancelled = false;
+    // Snapshot URL params synchronously, BEFORE any awaits or StrictMode
+    // double-invocation can clear them. The async block below uses these
+    // captured values rather than re-reading window.location.
     const ensParam = new URLSearchParams(window.location.search).get("ens");
     const fragmentImp = parseFragment();
+    const earlyKey = readKeyFragment();
     if (!ensParam && !fragmentImp) return;
 
     (async () => {
@@ -83,8 +88,10 @@ export default function App() {
             envelope: records.envelope,
             createdAt: records.createdAt ?? Math.floor(Date.now() / 1000),
             // For cTRNG, the key isn't in the ENS records (privacy-by-design).
-            // Look for it in the URL fragment (?ens=…#k=…). drand needs no key.
-            ctrngKeyB64: readKeyFragment(),
+            // Use the synchronously-captured fragment key from the top of this
+            // effect — re-reading window.location here would race with the
+            // first run's clearFragment() under React StrictMode.
+            ctrngKeyB64: earlyKey,
           };
         }
         if (!imp) return;
@@ -148,21 +155,39 @@ export default function App() {
     async (item: QueueItem, ownerAddress: string | null) => {
       if (!isNameStoneConfigured()) return;
       const label = generateCapsuleLabel();
+      const fqn = `${label}.${NAMESTONE_DOMAIN}`;
       try {
+        // Human-friendly text records also show up in the ENS app's
+        // Records tab (which only renders a known set of standard keys).
+        const unlockIso = new Date(item.unlock_unix * 1000)
+          .toISOString()
+          .replace("T", " ")
+          .replace(/\.\d+Z$/, " UTC");
+        const backendLabel = item.backend === "drand" ? "drand timelock" : "SpaceComputer cTRNG";
+        const description = `Sealed Sky capsule · ${backendLabel} · unlocks ${unlockIso}`;
+        const reopenUrl = `${window.location.origin}${window.location.pathname}?ens=${fqn}`;
+
         const records: Record<string, string> = {
+          // Custom keys — served by the resolver, read by our app via REST,
+          // not displayed in app.ens.domains' UI but available to viem/ethers.
           envelope: item.envelope,
           unlock_unix: String(item.unlock_unix),
           backend: item.backend,
           created_at: String(item.created_at),
+          // Standard keys — these DO show in the ENS app's Records tab,
+          // giving the capsule a readable face for non-developer audiences.
+          description,
+          url: reopenUrl,
+          notice: "Browser-decryptable timelock — visit url to unseal at maturity.",
         };
         if (item.sender_ens) records.sender_ens = item.sender_ens;
         if (item.recipient_ens) records.recipient_ens = item.recipient_ens;
-        const fqn = await publishCapsule({
+        const publishedFqn = await publishCapsule({
           label,
           ownerAddress,
           textRecords: records,
         });
-        updateItem(item.id, { capsule_ens: fqn, capsule_publish_error: undefined });
+        updateItem(item.id, { capsule_ens: publishedFqn, capsule_publish_error: undefined });
       } catch (e) {
         updateItem(item.id, {
           capsule_publish_error: e instanceof Error ? e.message : String(e),

@@ -4,12 +4,13 @@ import { mainnet } from "viem/chains";
 
 type Hex = `0x${string}`;
 
-// Public ENS reads. Cloudflare's mainnet RPC is CORS-friendly and free.
-// viem's universalResolver handles CCIP-Read, so off-chain ENS providers
-// (like NameStone) resolve transparently here.
+// Public ENS reads. publicnode's mainnet RPC handles universalResolver +
+// CCIP-Read reliably; cloudflare-eth.com returns "Invalid JSON" on some
+// CCIP-Read paths (observed against NameStone-hosted subdomains), so we
+// pin publicnode as primary and fall back through a couple of others.
 export const ensClient = createPublicClient({
   chain: mainnet,
-  transport: http("https://cloudflare-eth.com"),
+  transport: http("https://ethereum-rpc.publicnode.com", { timeout: 8000 }),
 });
 
 const reverseCache = new Map<string, string | null>();
