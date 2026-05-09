@@ -160,6 +160,20 @@ export function Detail({ item }: Props) {
             )}
           </>
         )}
+
+        {item.backend === "ctrng" &&
+          item.status === "unsealed" &&
+          item.ctrng_witness_pending &&
+          item.ctrng_witness_sequence === undefined && (
+            <>
+              <dt>witness</dt>
+              <dd>
+                <span className="witness-pending">
+                  beacon catching up… cTRNG publishes every ~60 s and IPNS gateways can lag a few minutes. Will attach the next block whose timestamp is past the unlock.
+                </span>
+              </dd>
+            </>
+          )}
       </dl>
 
       <div className="envelope-block">

@@ -22,6 +22,11 @@ export interface QueueItem {
   ctrng_witness_timestamp?: number;
   ctrng_witness_value?: string;
   ctrng_witness_url?: string;
+  // True after decryption when no fresh-enough beacon block has been seen yet.
+  // Cleared once a block with timestamp >= unlock_unix is fetched.
+  ctrng_witness_pending?: boolean;
+  // Last beacon-fetch attempt for this item (Unix ms). Used to throttle retries.
+  ctrng_witness_last_attempt?: number;
 
   // ENS metadata (Phase 1) — addressing layer, not crypto-binding
   sender_ens?: string;

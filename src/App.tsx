@@ -293,6 +293,44 @@ export default function App() {
     [updateItem],
   );
 
+  // Try to fetch a cTRNG beacon block whose timestamp is >= unlock_unix.
+  // Returns true when a fresh-enough witness was attached. Stand-alone helper
+  // — called both during the initial unseal AND from a background poll while
+  // ctrng_witness_pending is true.
+  const tryAttachCtrngWitness = useCallback(
+    async (item: QueueItem) => {
+      try {
+        const witness = await fetchLatestBeacon();
+        const unlockUnix = item.unlock_unix;
+        if (witness.timestamp >= unlockUnix) {
+          updateItem(item.id, {
+            ctrng_witness_sequence: witness.sequence,
+            ctrng_witness_timestamp: witness.timestamp,
+            ctrng_witness_value: witness.ctrng[0],
+            ctrng_witness_url: witness.source_url,
+            ctrng_witness_pending: false,
+            ctrng_witness_last_attempt: Date.now(),
+          });
+          return true;
+        }
+        // Beacon is reachable but still behind. Note the attempt and stay pending.
+        updateItem(item.id, {
+          ctrng_witness_pending: true,
+          ctrng_witness_last_attempt: Date.now(),
+        });
+        return false;
+      } catch {
+        // Beacon offline. Note the attempt and stay pending.
+        updateItem(item.id, {
+          ctrng_witness_pending: true,
+          ctrng_witness_last_attempt: Date.now(),
+        });
+        return false;
+      }
+    },
+    [updateItem],
+  );
+
   const tryUnsealCtrng = useCallback(
     async (item: QueueItem) => {
       if (!item.ctrng_key_b64) {
@@ -303,30 +341,49 @@ export default function App() {
         return;
       }
       const parsed = unpackCtrng(item.envelope);
-      const witness = await fetchLatestBeacon();
-      if (witness.timestamp < parsed.unlockUnix) {
-        updateItem(item.id, {
-          status: "ready",
-          error: `cTRNG block ${witness.sequence} ts ${witness.timestamp} < unlock ${parsed.unlockUnix}`,
-        });
-        return;
-      }
-      updateItem(item.id, { status: "unsealing", error: undefined });
       const keyBytes = b64ToBytes(item.ctrng_key_b64);
       const ok = await verifyCommitment(parsed.commit, keyBytes, parsed.iv, parsed.unlockUnix);
       if (!ok) {
         updateItem(item.id, { status: "error", error: "commitment mismatch" });
         return;
       }
+
+      updateItem(item.id, { status: "unsealing", error: undefined });
+      // K is local; local clock has reached unlock_unix. Decrypt right away —
+      // the cTRNG witness is a publicly-verifiable timestamp anchor for the
+      // demo narrative, not a cryptographic gate. We fetch it in parallel and
+      // surface it whenever it catches up.
       const plaintext = await symOpen(parsed.ct, parsed.iv, keyBytes);
+
+      // Try one synchronous witness fetch (often succeeds when there's no lag).
+      let witnessSeq: number | undefined;
+      let witnessTs: number | undefined;
+      let witnessVal: string | undefined;
+      let witnessUrl: string | undefined;
+      let witnessPending = true;
+      try {
+        const witness = await fetchLatestBeacon();
+        if (witness.timestamp >= parsed.unlockUnix) {
+          witnessSeq = witness.sequence;
+          witnessTs = witness.timestamp;
+          witnessVal = witness.ctrng[0];
+          witnessUrl = witness.source_url;
+          witnessPending = false;
+        }
+      } catch {
+        // beacon offline — leave pending; the background poll picks it up
+      }
+
       updateItem(item.id, {
         status: "unsealed",
         plaintext,
         error: undefined,
-        ctrng_witness_sequence: witness.sequence,
-        ctrng_witness_timestamp: witness.timestamp,
-        ctrng_witness_value: witness.ctrng[0],
-        ctrng_witness_url: witness.source_url,
+        ctrng_witness_sequence: witnessSeq,
+        ctrng_witness_timestamp: witnessTs,
+        ctrng_witness_value: witnessVal,
+        ctrng_witness_url: witnessUrl,
+        ctrng_witness_pending: witnessPending,
+        ctrng_witness_last_attempt: Date.now(),
       });
     },
     [updateItem],
@@ -352,6 +409,7 @@ export default function App() {
   );
 
   useEffect(() => {
+    const WITNESS_RETRY_MS = 30_000;
     const tick = () => {
       const t = Date.now();
       setNow(t);
@@ -363,12 +421,26 @@ export default function App() {
         if (it.status === "ready" && it.unlock_unix <= tSec && !inFlight.current.has(it.id)) {
           void tryUnseal(it);
         }
+        // Background witness re-fetch for cTRNG items decrypted before the
+        // beacon caught up. Throttled to one attempt per 30 s per item.
+        if (
+          it.status === "unsealed" &&
+          it.backend === "ctrng" &&
+          it.ctrng_witness_pending &&
+          (it.ctrng_witness_last_attempt ?? 0) + WITNESS_RETRY_MS < t &&
+          !inFlight.current.has(`witness-${it.id}`)
+        ) {
+          inFlight.current.add(`witness-${it.id}`);
+          void tryAttachCtrngWitness(it).finally(() => {
+            inFlight.current.delete(`witness-${it.id}`);
+          });
+        }
       }
     };
     tick();
     const id = window.setInterval(tick, POLL_MS);
     return () => window.clearInterval(id);
-  }, [items, tryUnseal, updateItem]);
+  }, [items, tryUnseal, tryAttachCtrngWitness, updateItem]);
 
   const handleUnseal = useCallback(
     (id: string) => {

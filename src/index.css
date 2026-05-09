@@ -656,6 +656,30 @@ button.ghost:hover:not(:disabled) {
   line-height: 1.5;
 }
 
+.witness-pending {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-dim);
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+
+.witness-pending::before {
+  content: "● ";
+  color: var(--accent);
+  animation: witness-blink 1.6s ease-in-out infinite;
+}
+
+@keyframes witness-blink {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .witness-pending::before { animation: none; opacity: 0.7; }
+}
+
 .envelope-block textarea {
   width: 100%;
   background: rgba(0, 0, 0, 0.5);
