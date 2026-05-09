@@ -365,19 +365,27 @@ export default function App() {
     <>
       <Starfield />
       <div className="app">
-        <header>
-        <h1>
-          Sealed Sky <span className="subtitle">cosmic timelock encryption</span>
-        </h1>
-        <div className="chain-info">
-          drand quicknet · <code>{CHAIN_HASH.slice(0, 12)}…</code>
-          {chainReady ? <span className="ok"> ● online</span> : <span className="warn"> ● connecting…</span>}
-          <span className="sep"> · </span>
-          SpaceComputer cTRNG · <code>k2k4r8…09f</code>
-        </div>
-        <WalletConnect onIdentityChange={setIdentity} />
-        {bootError && <div className="error">drand unreachable: {bootError}</div>}
-      </header>
+        <header className="site-header">
+          <div className="header-left">
+            <h1>
+              Sealed Sky <span className="subtitle">cosmic timelock encryption</span>
+            </h1>
+            <div className="chain-info">
+              drand quicknet · <code>{CHAIN_HASH.slice(0, 12)}…</code>
+              {chainReady ? (
+                <span className="ok"> ● online</span>
+              ) : (
+                <span className="warn"> ● connecting…</span>
+              )}
+              <span className="sep"> · </span>
+              SpaceComputer cTRNG · <code>k2k4r8…09f</code>
+            </div>
+            {bootError && <div className="error">drand unreachable: {bootError}</div>}
+          </div>
+          <div className="header-right">
+            <WalletConnect onIdentityChange={setIdentity} />
+          </div>
+        </header>
       <main>
         <div className="left-col">
           <Compose onSeal={handleSeal} disabled={!chainReady} senderEns={identity.ens} />

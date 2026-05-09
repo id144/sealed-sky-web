@@ -11,7 +11,9 @@
 
 import { readEnsText } from "./ens";
 
-const NAMESTONE_API = "https://namestone.com/api/public_v1";
+const NAMESTONE_API = import.meta.env.DEV
+  ? "/namestone"
+  : "https://namestone.com/api/public_v1";
 
 export const NAMESTONE_API_KEY = (import.meta.env.VITE_NAMESTONE_API_KEY ?? "") as string;
 export const NAMESTONE_DOMAIN = (import.meta.env.VITE_NAMESTONE_DOMAIN ?? "") as string;
@@ -78,6 +80,39 @@ export interface CapsuleRecords {
   senderEns: string | null;
   recipientEns: string | null;
   createdAt: number | null;
+}
+
+/**
+ * Reverse-lookup helper: ask NameStone which names are registered to an
+ * address inside our parent domain. Used as a fallback when the standard
+ * on-chain ENS reverse record isn't set (common for NameStone-issued
+ * subdomains, which are forward-only by default).
+ *
+ * Returns the first matching fully-qualified name, or null if none.
+ */
+export async function lookupNameViaNameStone(address: string): Promise<string | null> {
+  if (!isNameStoneConfigured()) return null;
+  if (!address || !address.startsWith("0x")) return null;
+  const url = `${NAMESTONE_API}/get-names?domain=${encodeURIComponent(
+    NAMESTONE_DOMAIN,
+  )}&address=${address}`;
+  try {
+    const r = await fetch(url, {
+      headers: { Authorization: NAMESTONE_API_KEY },
+    });
+    if (!r.ok) return null;
+    const body = (await r.json()) as unknown;
+    // The endpoint returns an array of `{ name, domain, address, ... }` rows.
+    if (!Array.isArray(body) || body.length === 0) return null;
+    const first = body[0] as { name?: unknown; domain?: unknown };
+    const name = typeof first.name === "string" ? first.name : null;
+    const domain = typeof first.domain === "string" ? first.domain : NAMESTONE_DOMAIN;
+    if (!name) return null;
+    // If the name already includes the dot (some responses return FQDN), use as-is.
+    return name.includes(".") ? name : `${name}.${domain}`;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchCapsuleByEns(name: string): Promise<CapsuleRecords | null> {

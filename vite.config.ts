@@ -14,4 +14,13 @@ export default defineConfig({
   optimizeDeps: {
     include: ["buffer"],
   },
+  server: {
+    proxy: {
+      "/namestone": {
+        target: "https://namestone.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/namestone/, "/api/public_v1"),
+      },
+    },
+  },
 });

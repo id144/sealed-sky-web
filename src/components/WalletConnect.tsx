@@ -1,9 +1,25 @@
 import { useEffect, useState } from "react";
 import { useWallet, shortAddr } from "../lib/wallet";
 import { lookupEnsName } from "../lib/ens";
+import { lookupNameViaNameStone } from "../lib/namestone";
 
 interface Props {
   onIdentityChange: (identity: { address: string | null; ens: string | null }) => void;
+}
+
+/**
+ * Resolve a name for an address. Two-stage:
+ *   1. Standard on-chain ENS reverse record (only set if the user did so via
+ *      the ENS app — uncommon for NameStone-issued names).
+ *   2. NameStone fallback: ask their API which names in our parent domain
+ *      are registered to this address.
+ */
+async function discoverPrimaryName(address: `0x${string}`): Promise<string | null> {
+  const onChain = await lookupEnsName(address);
+  if (onChain) return onChain;
+  const ns = await lookupNameViaNameStone(address);
+  if (ns) return ns;
+  return null;
 }
 
 export function WalletConnect({ onIdentityChange }: Props) {
@@ -19,7 +35,7 @@ export function WalletConnect({ onIdentityChange }: Props) {
     }
     setResolving(true);
     let cancelled = false;
-    lookupEnsName(wallet.address)
+    discoverPrimaryName(wallet.address)
       .then((name) => {
         if (cancelled) return;
         setEns(name);

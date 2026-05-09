@@ -116,6 +116,46 @@ header {
   margin-bottom: 36px;
 }
 
+.site-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.site-header .header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.site-header .header-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  /* Nudge upward so the connect button sits on the same baseline as the H1. */
+  margin-top: 6px;
+}
+
+.site-header .header-right .wallet-bar {
+  margin-top: 0;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .site-header .header-right {
+    justify-content: flex-start;
+    margin-top: 0;
+  }
+  .site-header .header-right .wallet-bar {
+    justify-content: flex-start;
+  }
+}
+
 header h1 {
   margin: 0;
   font-family: var(--font-display);
