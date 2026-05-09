@@ -157,25 +157,29 @@ export default function App() {
       const label = generateCapsuleLabel();
       const fqn = `${label}.${NAMESTONE_DOMAIN}`;
       try {
-        // Human-friendly text records also show up in the ENS app's
-        // Records tab (which only renders a known set of standard keys).
         const unlockIso = new Date(item.unlock_unix * 1000)
           .toISOString()
           .replace("T", " ")
           .replace(/\.\d+Z$/, " UTC");
         const backendLabel = item.backend === "drand" ? "drand timelock" : "SpaceComputer cTRNG";
-        const description = `Sealed Sky capsule · ${backendLabel} · unlocks ${unlockIso}`;
         const reopenUrl = `${window.location.origin}${window.location.pathname}?ens=${fqn}`;
 
+        // app.ens.domains' Records UI only queries a fixed allowlist of known
+        // text keys (description, url, avatar, email, location, notice,
+        // com.twitter, …). Custom keys like `envelope` are *served* by the
+        // resolver but *invisible* in the UI. Workaround: embed the envelope
+        // INSIDE the description so it shows up next to the human summary.
+        // The standalone `envelope` key stays for machine-readable consumers.
+        const human = `Sealed Sky timelock capsule · ${backendLabel} · unlocks ${unlockIso}`;
+        const description = `${human}\n\nEnvelope (base64 of JSON, decryptable via ${window.location.origin}):\n${item.envelope}`;
+
         const records: Record<string, string> = {
-          // Custom keys — served by the resolver, read by our app via REST,
-          // not displayed in app.ens.domains' UI but available to viem/ethers.
+          // Custom keys — for our app + any client that asks by name.
           envelope: item.envelope,
           unlock_unix: String(item.unlock_unix),
           backend: item.backend,
           created_at: String(item.created_at),
-          // Standard keys — these DO show in the ENS app's Records tab,
-          // giving the capsule a readable face for non-developer audiences.
+          // Standard keys — visible in app.ens.domains' Records tab.
           description,
           url: reopenUrl,
           notice: "Browser-decryptable timelock — visit url to unseal at maturity.",
